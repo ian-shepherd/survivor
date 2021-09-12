@@ -386,8 +386,9 @@ st.dataframe(picks[(picks['Week']==week) & (picks['Eligible']=='N')])
 
 
 st.title('Missing Picks')
+week_picks = picks[(picks['Week']==week) & (picks['Eligible']=='Y')]
 missing_pickers = misc[misc['Pool']!='Eliminated'].copy()
-missing_pickers = missing_pickers.loc[:,['Name']].merge(picks.loc[:,['Name', 'Pick']],
+missing_pickers = missing_pickers.loc[:,['Name']].merge(week_picks.loc[:,['Name', 'Pick']],
                                                         how='left',
                                                         on='Name')
 missing_pickers = missing_pickers[missing_pickers['Pick'].isnull()]
@@ -401,7 +402,6 @@ st.dataframe(missing_pickers)
 
 st.title('Weekly Picks')
 teams = pd.DataFrame(data=teams, columns=['Pick'])
-week_picks = picks[(picks['Week']==week) & (picks['Eligible']=='Y')]
 
 team_counts = week_picks['Pick'].value_counts().reset_index()
 team_counts.columns = ['Pick', 'Count']
