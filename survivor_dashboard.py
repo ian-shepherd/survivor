@@ -129,9 +129,11 @@ def get_results(responses, scores, picks):
                   right_on=['Team', 'Week']).drop(['Team'], 1)
     
     # Add result
-    df['Result'] = np.where(df['Point_diff_x']>0, 'W',
-                            np.where(df['Point_diff_x']<0, 'L', 
-                                     np.where(df['Point_diff_x']==0, 'T', 'Ongoing')))
+    df['Result'] = np.where(df['Pick'].isin(['None', 'Invalid']), 'L',
+                            np.where(df['Point_diff_x']>0, 'W',
+                                     np.where(df['Point_diff_x']<0, 'L', 
+                                              np.where(df['Point_diff_x']==0, 'T', 'Ongoing'))))
+    
     
     # Double pick week result 
     df['Result'] = np.where((df['Week']=='Week 14') & (df['Result']=='W') & (df['Point_diff_y']<0),
@@ -320,11 +322,11 @@ def run_project():
     output = generate_output(misc, rank, results)
     
     
-    return picks, output
+    return picks, output, misc
 
 
 
-picks, output = run_project()
+picks, output, misc = run_project()
 
 
 
@@ -382,12 +384,36 @@ teams = ['Arizona Cardinals', 'Atlanta Falcons', 'Baltimore Ravens', 'Buffalo Bi
 st.title('Invalid Picks')
 st.dataframe(picks[(picks['Week']==week) & (picks['Eligible']=='N')])
 
+
+st.title('Missing Picks')
+missing_pickers = misc[misc['Pool']!='Eliminated'].copy()
+missing_pickers = missing_pickers.loc[:,['Name']].merge(picks.loc[:,['Name', 'Pick']],
+                                                        how='left',
+                                                        on='Name')
+missing_pickers = missing_pickers[missing_pickers['Pick'].isnull()]
+st.dataframe(missing_pickers)
+
+
+
+
+
+
+
 st.title('Weekly Picks')
 teams = pd.DataFrame(data=teams, columns=['Pick'])
 week_picks = picks[(picks['Week']==week) & (picks['Eligible']=='Y')]
-team_counts = teams.merge(week_picks, how='left', on='Pick')['Pick'].value_counts()
+
+team_counts = week_picks['Pick'].value_counts().reset_index()
+team_counts.columns = ['Pick', 'Count']
+team_counts = teams.merge(team_counts, how='left', on='Pick')
+team_counts = team_counts.set_index('Pick')
+team_counts['Count'] = team_counts['Count'].fillna(0)
+team_counts = team_counts.squeeze()
+
+st.dataframe(team_counts)
 
 
+st.title('Weekly Picks Picture')
 prefix_text = "<p style='text-align: center;'>"
 suffix_text = "</p>"
 
@@ -395,7 +421,8 @@ suffix_text = "</p>"
 
 def transparency(team, count):
     
-    count = count - 1
+    count = int(count)
+        
     
     if count > 0:
         image = """
