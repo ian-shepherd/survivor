@@ -73,10 +73,11 @@ def validate_picks(responses, double_dip):
     loserDF1 = df[df['Week']=='Week 06']
     loserDF2 = df[df['Week'].isin(['Week 01', 'Week 02', 'Week 03', 'Week 04', 'Week 05'])]
     loserDF2 = loserDF2.rename(columns={'Week' : 'Week_'})
+    loserDF2 = loserDF2.drop_duplicates(subset=['Name', 'Pick'])
     losers = loserDF1.merge(loserDF2, how='left', on=['Name', 'Pick'])
     
     # Check loser eligibility
-    losers['Eligible'] = np.where(losers['Week_'].isnull(), 'N', 'Y')
+    losers['Eligible'] = np.where((losers['Week_'].isnull()) & (losers['Pick'] != 'None'), 'N', 'Y')
     
     # Count team picks (exclude losers week)
     picks = df[df['Week']!='Week 06']
@@ -85,7 +86,7 @@ def validate_picks(responses, double_dip):
         
     # Check double dip
     picks = picks.merge(double_dip, how='left', on='Name')
-    picks['Eligible'] = np.where(picks['Count']<2, 'Y',
+    picks['Eligible'] = np.where((picks['Count']<2) | (picks['Pick']=='None'), 'Y',
                                  np.where((picks['Count']==2) & (picks['Pick']==picks['Double Dip']), 'Y', 'N'))
     
     
@@ -235,7 +236,7 @@ def get_rank(record, l1, l2, l3, l4, points, misc):
     df['Rank'] = np.where(df['Pool']=='Consolation', df['Rank'] - con_rank,
                           np.where(df['Pool']=='Eliminated', df['Rank'] - elim_rank + 300, df['Rank']))        
     
-    df = df.loc[:,['Rank', 'Record', 'Name']]
+    df = df.loc[:,['Rank', 'Record', 'Name', 'Point_diff']]
     df = df.reset_index().rename(columns={'index' : 'order'})
     
     df = df.set_index('Name')
@@ -269,6 +270,10 @@ def generate_output(misc, rank, results):
     
     
     df = df.merge(results, how='left', left_index=True, right_index=True)
+    
+    
+    df['Point_diff'] = df['Point_diff'].astype(int)
+    df = df.rename(columns={'Point_diff' : 'Point Diff'})
     
     # Clean up ordering
     df = df.reset_index().rename(columns={'index' : 'Name'})
