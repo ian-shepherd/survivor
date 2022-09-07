@@ -5,6 +5,7 @@ import numpy as np
 import streamlit as st
 import base64
 import io
+import openpyxl
 
 
 # Use the full page instead of a narrow central column
