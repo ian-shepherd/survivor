@@ -41,11 +41,12 @@ class SurvivorLeague:
 
         self.misc = self.query_data(self.misc_id, self.misc_name)
         self.misc["Name"] = (
-            self.misc["Name"].str.replace("[^a-zA-Z .'0-9]", "").str.strip()
+            self.misc["Name"].str.replace("[^a-zA-Z .'0-9]", "", regex=True).str.strip()
         )
 
         self.scores = self.query_data(self.scores_id, self.scores_name)
         self.scores["Point_diff"] = self.scores["Scored"] - self.scores["Allowed"]
+        self.current_week = int(self.scores.Week.max().replace("Week ", ""))
 
     def clean_responses(self):
 
@@ -63,7 +64,9 @@ class SurvivorLeague:
         ]
 
         # Clean names
-        self.resp["Name"] = self.resp["Name_raw"].str.replace("[^a-zA-Z .'0-9]", "")
+        self.resp["Name"] = self.resp["Name_raw"].str.replace(
+            "[^a-zA-Z .'0-9]", "", regex=True
+        )
         self.resp["Name"] = self.resp["Name"].str.strip()
 
         # Clean weeks
@@ -75,11 +78,11 @@ class SurvivorLeague:
         # keep last pick only
         self.resp = self.resp.drop_duplicates(subset=["Name", "Week"], keep="last")
 
-        # # set pick 2 to object
+        # set pick 2 to object
         self.resp["Pick 2"] = self.resp["Pick 2"].astype(object)
 
         self.resp = self.resp.drop(
-            ["Timestamp", "Name_raw", "Week_raw", "Location", "Pool_raw"], 1
+            labels=["Timestamp", "Name_raw", "Week_raw", "Location", "Pool_raw"], axis=1
         )
 
     def validate_responses(self):
@@ -90,7 +93,7 @@ class SurvivorLeague:
         # Append double picks together
         df1 = df.loc[:, ["Name", "Week", "Pick"]]
         df2 = df.loc[:, ["Name", "Week", "Pick 2"]].rename(columns={"Pick 2": "Pick"})
-        df = pd.concat([df1, df2], axis=0)
+        df = pd.concat(objs=[df1, df2], axis=0)
         df = df.dropna()
 
         # Check loser picks
@@ -132,7 +135,7 @@ class SurvivorLeague:
             on=["Name", "Week", "Pick"],
         )
         df["Eligible"] = df["Eligible_x"].fillna(df["Eligible_y"])
-        df = df.drop(["Eligible_x", "Eligible_y"], 1)
+        df = df.drop(labels=["Eligible_x", "Eligible_y"], axis=1)
 
         self.picks = df
 
@@ -141,13 +144,13 @@ class SurvivorLeague:
         # pick 1
         df = self.resp.merge(self.picks, how="left", on=["Name", "Week", "Pick"])
         df["Pick"] = np.where(df["Eligible"] == "N", "Invalid", df["Pick"])
-        df = df.drop(["Eligible"], 1)
+        df = df.drop(labels=["Eligible"], axis=1)
 
         # pick 2
         picks = self.picks.rename(columns={"Pick": "Pick 2"})
         df = df.merge(picks, how="left", on=["Name", "Week", "Pick 2"])
         df["Pick 2"] = np.where(df["Eligible"] == "N", "Invalid", df["Pick 2"])
-        df = df.drop(["Eligible"], 1)
+        df = df.drop(labels=["Eligible"], axis=1)
 
         # Pick scores
         df = df.merge(
@@ -155,7 +158,7 @@ class SurvivorLeague:
             how="left",
             left_on=["Pick", "Week"],
             right_on=["Team", "Week"],
-        ).drop(["Team"], 1)
+        ).drop(labels=["Team"], axis=1)
 
         # Double pick week scores
         df = df.merge(
@@ -163,7 +166,7 @@ class SurvivorLeague:
             how="left",
             left_on=["Pick 2", "Week"],
             right_on=["Team", "Week"],
-        ).drop(["Team"], 1)
+        ).drop(labels=["Team"], axis=1)
 
         # Add result
         df["Result"] = np.where(
@@ -211,7 +214,7 @@ class SurvivorLeague:
         df["Eligible"] = np.where(
             (df["Eligible_x"] == "Y") & (df["Eligible_y"] == "Y"), "Y", "N"
         )
-        df = df.drop(["Eligible_x", "Eligible_y"], 1)
+        df = df.drop(labels=["Eligible_x", "Eligible_y"], axis=1)
 
         # Add record
         df["W"] = np.where(df["Result"] == "W", 1, 0)
@@ -236,20 +239,33 @@ class SurvivorLeague:
 
         # Win Streaks
         streaks = df.loc[:, ["Name", "Week", "L"]]
-        streaks["L1"] = np.where(streaks["L"] == 1, streaks["Week"], "N/A")
-        streaks["L2"] = np.where(streaks["L"] == 2, streaks["Week"], "N/A")
-        streaks["L3"] = np.where(streaks["L"] == 3, streaks["Week"], "N/A")
-        streaks["L4"] = np.where(streaks["L"] == 4, streaks["Week"], "N/A")
+        streaks["L1"] = np.where(
+            streaks["L"] == 1,
+            streaks["Week"].str.replace("Week ", "").astype(int),
+            0,
+        )
+        streaks["L2"] = np.where(
+            streaks["L"] == 2, streaks["Week"].str.replace("Week ", "").astype(int), 0
+        )
+        streaks["L3"] = np.where(
+            streaks["L"] == 3, streaks["Week"].str.replace("Week ", "").astype(int), 0
+        )
+        streaks["L4"] = np.where(
+            streaks["L"] == 4, streaks["Week"].str.replace("Week ", "").astype(int), 0
+        )
+        streaks["L5"] = np.where(
+            streaks["L"] == 5, streaks["Week"].str.replace("Week ", "").astype(int), 0
+        )
+        streaks["L6"] = np.where(
+            streaks["L"] == 6, streaks["Week"].str.replace("Week ", "").astype(int), 0
+        )
 
         self.record = record
         self.streaks = streaks
 
     def get_loss_streak(self, col):
         df = (
-            self.streaks[self.streaks[col] != "N/A"]
-            .groupby(["Name"])
-            .first()
-            .loc[:, [col]]
+            self.streaks[self.streaks[col] != 0].groupby(["Name"]).first().loc[:, [col]]
         )
         return df
 
@@ -265,20 +281,60 @@ class SurvivorLeague:
         points = points.groupby(["Name"])["Point_diff"].sum()
 
         df = pd.concat(
-            [
+            objs=[
                 self.record,
                 self.streak_l1,
                 self.streak_l2,
                 self.streak_l3,
                 self.streak_l4,
+                self.streak_l5,
+                self.streak_l6,
                 points,
                 misc,
             ],
-            1,
+            axis=1,
         )
+
+        df[["L1", "L2", "L3", "L4", "L5", "L6"]] = df[
+            ["L1", "L2", "L3", "L4", "L5", "L6"]
+        ].fillna(self.current_week)
+        df["consolation"] = df.L3 - df.L2
+        df["consolation"] = np.where(
+            df.L4 - df.L3 > df.consolation, df.L4 - df.L3, df.consolation
+        )
+        df["consolation"] = np.where(
+            df.L5 - df.L4 > df.consolation, df.L5 - df.L4, df.consolation
+        )
+        df["consolation"] = np.where(
+            df.L6 - df.L5 > df.consolation, df.L6 - df.L5, df.consolation
+        )
+        df["consolation"] = np.where(df.Pool == "Consolation", df.consolation, 0)
+
         df = df.sort_values(
-            ["Pool_alt", "W", "T", "L", "L1", "L2", "L3", "L4", "Point_diff"],
-            ascending=(False, False, False, True, False, False, False, False, False),
+            [
+                "Pool_alt",
+                "W",
+                "T",
+                "L",
+                "consolation",
+                "L1",
+                "L2",
+                "L3",
+                "L4",
+                "Point_diff",
+            ],
+            ascending=(
+                False,
+                False,
+                False,
+                True,
+                False,
+                False,
+                False,
+                False,
+                False,
+                False,
+            ),
         )
 
         df = df.reset_index()
@@ -315,7 +371,7 @@ class SurvivorLeague:
         misc = self.misc.set_index("Name")
         results = self.results.copy()
 
-        df = pd.concat([misc, self.rank], 1)
+        df = pd.concat(objs=[misc, self.rank], axis=1)
 
         # Generate picks pivot
         results["Pick"] = np.where(
@@ -324,7 +380,7 @@ class SurvivorLeague:
             results["Pick"] + "/" + results["Pick 2"],
         )
 
-        results = results.drop(["Pick 2", "Point_diff"], 1)
+        results = results.drop(labels=["Pick 2", "Point_diff"], axis=1)
         results["Pick"] = results["Pick"] + "_" + results["Result"]
 
         results = results.pivot_table(
@@ -359,6 +415,8 @@ class SurvivorLeague:
         self.streak_l2 = self.get_loss_streak("L2")
         self.streak_l3 = self.get_loss_streak("L3")
         self.streak_l4 = self.get_loss_streak("L4")
+        self.streak_l5 = self.get_loss_streak("L5")
+        self.streak_l6 = self.get_loss_streak("L6")
         self.get_rank()
         self.generate_output()
 
