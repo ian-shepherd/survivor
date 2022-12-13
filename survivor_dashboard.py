@@ -58,8 +58,8 @@ class SurvivorLeague:
             "Double Dip",
             "Week_raw",
             "Pick",
-            "Location",
             "Pick 2",
+            "Location",
             "Pool_raw",
         ]
 
