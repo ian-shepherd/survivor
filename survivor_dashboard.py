@@ -185,7 +185,7 @@ class SurvivorLeague:
 
         # Double pick week result
         df["Result"] = np.where(
-            (df["Week"] == "Week 14")
+            (df["Week"] == "Week 15")
             & (df["Result"] == "W")
             & (df["Point_diff_y"] < 0),
             "L",
