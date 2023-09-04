@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 
-import pandas as pd
-import numpy as np
-import streamlit as st
 import base64
 import io
-import openpyxl
 
+import numpy as np
+import openpyxl
+import pandas as pd
+import streamlit as st
 
 # Use the full page instead of a narrow central column
 st.set_page_config(
@@ -28,7 +28,6 @@ class SurvivorLeague:
         self.scores_name = scores_name
 
     def query_data(self, sheet_id, sheet_name):
-
         sheet_name = sheet_name.replace(" ", "%20")
 
         url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={sheet_name}"
@@ -49,18 +48,29 @@ class SurvivorLeague:
         self.current_week = int(self.scores.Week.max().replace("Week ", ""))
 
     def clean_responses(self):
+        # select appropriate columns
+        self.resp = self.resp.loc[
+            :,
+            [
+                "Timestamp",
+                "Email Address",
+                "Name",
+                "Which Week are you Picking for? ",
+                "Weekly Pick",
+            ],
+        ]
+
+        # temp until pick 2 is added
+        self.resp["Pick 2"] = np.nan
 
         # Update columns
         self.resp.columns = [
             "Timestamp",
             "Email",
             "Name_raw",
-            "Double Dip",
             "Week_raw",
             "Pick",
             "Pick 2",
-            "Location",
-            "Pool_raw",
         ]
 
         # Clean names
@@ -81,12 +91,9 @@ class SurvivorLeague:
         # set pick 2 to object
         self.resp["Pick 2"] = self.resp["Pick 2"].astype(object)
 
-        self.resp = self.resp.drop(
-            labels=["Timestamp", "Name_raw", "Week_raw", "Location", "Pool_raw"], axis=1
-        )
+        self.resp = self.resp.loc[:, ["Email", "Name", "Week", "Pick", "Pick 2"]]
 
     def validate_responses(self):
-
         double_dip = self.misc.loc[:, ["Name", "Double Dip"]]
         df = self.resp.copy(deep=True)
 
@@ -186,8 +193,8 @@ class SurvivorLeague:
         # Double pick week result
         df["Result"] = np.where(
             (df["Week"] == "Week 15")
-            & (df["Result"] == "W")
-            & (df["Point_diff_y"] < 0),
+            & (df["Result"] == "W")  # noqa: W503
+            & (df["Point_diff_y"] < 0),  # noqa: W503
             "L",
             np.where(
                 (df["Pick"] == "Invalid") | (df["Pick 2"] == "Invalid"),
@@ -204,7 +211,6 @@ class SurvivorLeague:
         self.results = df
 
     def get_records(self):
-
         picks = self.picks.copy()
 
         # Add eligibility
@@ -229,10 +235,10 @@ class SurvivorLeague:
         record = df.loc[:, ["Name", "W", "L", "T"]]
         record["Record"] = (
             record["W"].astype(str)
-            + "-"
-            + record["L"].astype(str)
-            + "-"
-            + record["T"].astype(str)
+            + "-"  # noqa: W503
+            + record["L"].astype(str)  # noqa: W503
+            + "-"  # noqa: W503
+            + record["T"].astype(str)  # noqa: W503
         )
         record = record.drop_duplicates(subset=["Name"], keep="last")
         record = record.set_index("Name")
@@ -270,7 +276,6 @@ class SurvivorLeague:
         return df
 
     def get_rank(self):
-
         df = self.record.copy()
 
         misc = self.misc.loc[:, ["Name", "Pool"]]
@@ -367,7 +372,6 @@ class SurvivorLeague:
         self.rank = df
 
     def generate_output(self):
-
         misc = self.misc.set_index("Name")
         results = self.results.copy()
 
@@ -424,18 +428,17 @@ class SurvivorLeague:
 
 
 survivor = SurvivorLeague(
-    resp_id="1GsfUcxpWC2BtAUwyUKeMDmpGqRZG1f0xb9PYF_ODJyM",
+    resp_id="1KQAaDrKK_jzsuv1HvwxwhBF6gARI3_9WkDSAnlLcVYA",
     resp_name="Form Responses 1",
-    misc_id="1eXpIOidMvD75qOEnGf47kVx7NVFtl6eT7YyyyB--SJc",
+    misc_id="15EywYiKpDH82dhQQZ-0VEfvQsoTlHwl7Q4z0KkEVJuY",
     misc_name="Sheet1",
-    scores_id="13tA8cz_c6QHT_OELQNxjW7LveyVnP42Z2ySeyMAMUAE",
+    scores_id="1PPHUvJj0X34TL1rrBmTH2TBEFo9rLA6-y6kSk0K2COM",
     scores_name="Sheet1",
 )
 picks, output, misc = survivor.run()
 
 
 def apply_formatting(val):
-
     if type(val) in (int, float):
         color = "white"
     elif "_W" in val:
@@ -461,7 +464,7 @@ towrite = io.BytesIO()
 downloaded_file = output.to_excel(towrite, encoding="utf-8", index=False, header=True)
 towrite.seek(0)  # reset pointer
 b64 = base64.b64encode(towrite.read()).decode()  # some strings
-linko = f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64}" download="survivor_standings.xlsx">Download standings</a>'
+linko = f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64}" download="survivor_standings.xlsx">Download standings</a>'  # noqa: E501
 st.markdown(linko, unsafe_allow_html=True)
 
 # Weekly view
@@ -556,7 +559,6 @@ suffix_text = "</p>"
 
 
 def transparency(team, count):
-
     count = int(count)
 
     if count > 0:
@@ -565,14 +567,14 @@ def transparency(team, count):
         <img src="https://static.www.nfl.com/t_headshot_desktop/f_auto/league/api/clubs/logos/{0}" align="center" width="100" alt="Project icon">
         <p style='text-align: center;'>{1}</p>
         </td></tr></table>
-        """
+        """  # noqa: E501
     else:
         image = """
         <table bordercolor="white" align="center"><tr><td align="center" width="9999">
         <img src="https://static.www.nfl.com/t_headshot_desktop/f_auto/league/api/clubs/logos/{0}" align="center" width="100" alt="Project icon" style="opacity:0.25">
         <p style='text-align: center;'>{1}</p>
         </td></tr></table>
-        """
+        """  # noqa: E501
 
     return image.format(team, str(count))
 
