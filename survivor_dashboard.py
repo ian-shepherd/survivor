@@ -85,6 +85,9 @@ class SurvivorLeague:
             self.resp["Week"] == "LOSER W", "Week 06", self.resp["Week"]
         )
 
+        # Replace nan with None string
+        self.resp["Pick"] = self.resp["Pick"].fillna("None")
+
         # keep last pick only
         self.resp = self.resp.drop_duplicates(subset=["Name", "Week"], keep="last")
 
