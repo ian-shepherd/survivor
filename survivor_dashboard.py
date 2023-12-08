@@ -57,11 +57,12 @@ class SurvivorLeague:
                 "Name",
                 "Which Week are you Picking for? ",
                 "Weekly Pick",
+                "Weekly Pick #2",
             ],
         ]
 
-        # temp until pick 2 is added
-        self.resp["Pick 2"] = np.nan
+        # # temp until pick 2 is added
+        # self.resp["Pick 2"] = np.nan
 
         # Update columns
         self.resp.columns = [
