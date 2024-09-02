@@ -4,7 +4,8 @@ import base64
 import io
 
 import numpy as np
-import openpyxl
+
+# import openpyxl
 import pandas as pd
 import streamlit as st
 
@@ -397,7 +398,7 @@ class SurvivorLeague:
 
         df = df.merge(results, how="left", left_index=True, right_index=True)
 
-        df["Point_diff"].fillna(0, inplace=True)
+        df["Point_diff"] = df["Point_diff"].fillna(0)
         df["Point_diff"] = df["Point_diff"].astype(int)
         df = df.rename(columns={"Point_diff": "Point Diff"})
 
@@ -432,11 +433,11 @@ class SurvivorLeague:
 
 
 survivor = SurvivorLeague(
-    resp_id="1KQAaDrKK_jzsuv1HvwxwhBF6gARI3_9WkDSAnlLcVYA",
+    resp_id="18FuIgOjBLXHYm1bPxIeV7qxieF3LIMlWWIgDz0GadlE",
     resp_name="Form Responses 1",
-    misc_id="15EywYiKpDH82dhQQZ-0VEfvQsoTlHwl7Q4z0KkEVJuY",
+    misc_id="1HsgL1rpguUfByBjFHGRkwu7wKkk5IGXP7zmGvhjS0io",
     misc_name="Sheet1",
-    scores_id="1PPHUvJj0X34TL1rrBmTH2TBEFo9rLA6-y6kSk0K2COM",
+    scores_id="1kBlwHj7xnxGWByo5QPYcxX-50Rz-QOHSDqee-Psr75Q",
     scores_name="Sheet1",
 )
 picks, output, misc = survivor.run()
@@ -458,11 +459,13 @@ def apply_formatting(val):
 
 
 st.title("Standings")
-st.dataframe(output.style.applymap(apply_formatting))
+# st.dataframe(output.style.applymap(apply_formatting))
+st.dataframe(output.style.map(apply_formatting))
 
 
 # Download file
-output = output.style.applymap(apply_formatting)
+# output = output.style.applymap(apply_formatting)
+output = output.style.map(apply_formatting)
 
 towrite = io.BytesIO()
 downloaded_file = output.to_excel(towrite, encoding="utf-8", index=False, header=True)

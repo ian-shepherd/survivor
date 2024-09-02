@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "survivor"
+version = "0.1.0"
+description = ""
+authors = ["ian-shepherd <ian.shepherd123@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+streamlit = "^1.38.0"
+numpy = "^2.1.0"
+pandas = "^2.2.2"
+openpyxl = "^3.1.5"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
