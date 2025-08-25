@@ -433,11 +433,11 @@ class SurvivorLeague:
 
 
 survivor = SurvivorLeague(
-    resp_id="18FuIgOjBLXHYm1bPxIeV7qxieF3LIMlWWIgDz0GadlE",
+    resp_id="1RyOc-sEdpfjfQpxiCf5wjT1cNNZ5BQ9C9n_pVNSWfa0",
     resp_name="Form Responses 1",
-    misc_id="1HsgL1rpguUfByBjFHGRkwu7wKkk5IGXP7zmGvhjS0io",
+    misc_id="1y_BrU8R5aSFRIrAuN7XR3U9SAHW1p7XvaQazs_xkKnw",
     misc_name="Sheet1",
-    scores_id="1kBlwHj7xnxGWByo5QPYcxX-50Rz-QOHSDqee-Psr75Q",
+    scores_id="1OgbehPfcTviXjRbRek6_6kPkDyJKXDgHzMQErDov5jo",
     scores_name="Sheet1",
 )
 picks, output, misc = survivor.run()
